@@ -6,6 +6,7 @@ import (
 	//"strings"
 	"strconv"
 	"github.com/syndtr/goleveldb/leveldb"
+	"reflect"
 )
 
 func intToString(num int) string {
@@ -24,13 +25,24 @@ type block struct{
 }
 
 
+//defining the structure of the data in leveldb
+type leveldbVal struct {
+	val int64
+	ver float64
+}
+
+//declaring the database and err globally
+var db *leveldb.DB
+var err error
 
 func main() {
-	db, err := leveldb.OpenFile("db", nil)
+	//constructing the database
+	db, err = leveldb.OpenFile("db", nil)
 	if err != nil {
 		fmt.Println("issue in Database OPENFILE", err)
 	}
 
+	//create the keys SIM1 --> SIM1000
 	for i := 1 ; i <= 1000 ; i++{
 		key := "SIM" + intToString(i) 
 		err = db.Put([]byte(key), []byte("") , nil)
@@ -38,12 +50,15 @@ func main() {
 			fmt.Println("whach out" , i)
 		}
 	}
-	fmt.Println("done with here")
 
-	iter := db.NewIterator(nil, nil)
-	for iter.Next() {
-		fmt.Println(string(iter.Key()))
-	}
+	//checking all the keys
+	// iter := db.NewIterator(nil, nil)
+	// for iter.Next() {
+	// 	fmt.Println(string(iter.Key()))
+	// }
+	// fmt.Println(reflect.TypeOf(db))
+
+	
 
 }
 
