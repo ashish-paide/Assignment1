@@ -1,29 +1,49 @@
 package main
 
-import "fmt"
+import (
+	"time"
+	"fmt"
+	//"strings"
+	"strconv"
+	"github.com/syndtr/goleveldb/leveldb"
+)
 
-type ByteSize float64
-
-const (
-	KB ByteSize = 1 << (10 * (iota + 1))
-	MB
-	GB
-)Go Notebook Kernel: Open Interactive.
-
-func (b ByteSize) String() string {
-	switch {
-	case b >= GB:
-		return fmt.Sprintf("%.2fGB", b/GB)
-	case b >= MB:
-		return fmt.Sprintf("%.2fMB", b/MB)
-	case b >= KB:
-		return fmt.Sprintf("%.2fKB", b/KB)
-	}
-	return fmt.Sprintf("%.2fB", b)
+func intToString(num int) string {
+	return  strconv.Itoa(num)
 }
 
+type block struct{
+	blockNo int32
+	prevBlockHash int64
+	tracsactions[] struct{
+		ID int32
+		version float64
+		valid bool	
+	}
+	timeStamp time.Time
+}
+
+
+
 func main() {
-	fmt.Println(1001*KB, 2.5*MB, 3.5*GB)
-	fmt.Println(ByteSize(121000000))
+	db, err := leveldb.OpenFile("db", nil)
+	if err != nil {
+		fmt.Println("issue in Database OPENFILE", err)
+	}
+
+	for i := 1 ; i <= 1000 ; i++{
+		key := "SIM" + intToString(i) 
+		err = db.Put([]byte(key), []byte("") , nil)
+		if(err != nil){
+			fmt.Println("whach out" , i)
+		}
+	}
+	fmt.Println("done with here")
+
+	iter := db.NewIterator(nil, nil)
+	for iter.Next() {
+		fmt.Println(string(iter.Key()))
+	}
+
 }
 
