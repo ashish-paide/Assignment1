@@ -6,11 +6,12 @@ import(
 	"encoding/csv"
 	"os"
 	"log"
+	"fmt"
 )
 
 type golevelInterface interface {
 	NewDatabase(path string)(*golevelDatabase ,error)
-	Set(key string , value leveldbVal) error                 //insert the key(string) <--> value([]byte) pair into the database 
+	Set(key string , value TransactionData) error                 //insert the key(string) <--> value([]byte) pair into the database 
 	Get(key []byte)(*golevelDatabase , error)				 //fetch the value with  the key from the database
 	GetallInCsv()(error)									 //using for the debugging :) creates the csv file contains all the key value pairs in the database
 }
@@ -25,18 +26,24 @@ type golevelDatabase struct {
 //creates the database
 //Parameters:
 //	 -path(string) at what place we want to locate / previously located.
-func Create_Database(path string)(*golevelDatabase ,  error) {
+func Create_Database(path string)(*golevelDatabase) {
 	db, err := leveldb.OpenFile(path, nil)
-	return &golevelDatabase{db:db} , err
+	if err != nil{
+		fmt.Println("Error in Creating Database ** err --> Create_Database")
+	}
+	return &golevelDatabase{db:db}
 }
 
 
 //Get the value from the database
 //Parameters:
 //	-key(string) 
-func (b *golevelDatabase) Get(key string) (string , error) {
-	fetched_string , err:= b.db.Get([]byte(key) , nil)
-	return string(fetched_string), err
+func (b *golevelDatabase) Get(key string) (TransactionData , error) {
+	fetched_byte_stream , err:= b.db.Get([]byte(key) , nil)
+
+	var tnxData TransactionData
+	err = json.Unmarshal(fetched_byte_stream , &tnxData)
+	return tnxData, err
 }
 
 
@@ -44,7 +51,7 @@ func (b *golevelDatabase) Get(key string) (string , error) {
 // Parameters
 // 	-key(string) with which key we want to insert into the database
 // 	-value(leveldbVal (struct)) with which value we want to insert into the database
-func (b *golevelDatabase) Set(key string , value leveldbVal)error{
+func (b *golevelDatabase) Set(key string , value TransactionData)error{
 
 	jsonStr , err := json.Marshal(value)
 	if err != nil {

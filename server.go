@@ -5,24 +5,19 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
-type Payload struct {
-	SIM map[string]TransactionData `json:"SIM"`
-}
-
-type TransactionData struct {
-	Val int     `json:"val"`
-	Ver float64 `json:"ver"`
-}
 
 
 
+var db = Create_Database("db")
 func main() {
 
 	// Create a new Gin router
 	router := gin.Default()
-
+	
 	// POST /create/{key}
-	go router.POST("/create", insertTransactions)
+	go router.POST("/insert", insertHandler)
+	go router.GET("/admin/reset" , resetDBHandler)
+
 
 	log.Println("Server listening on port 18080...")
 	router.Run(":18080")
