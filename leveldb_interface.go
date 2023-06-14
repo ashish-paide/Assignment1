@@ -11,7 +11,7 @@ import(
 
 type golevelInterface interface {
 	NewDatabase(path string)(*golevelDatabase ,error)
-	Set(key string , value TransactionData) error                 //insert the key(string) <--> value([]byte) pair into the database 
+	Set(key string , value LocalTransactionData) error                 //insert the key(string) <--> value([]byte) pair into the database 
 	Get(key []byte)(*golevelDatabase , error)				 //fetch the value with  the key from the database
 	GetallInCsv()(error)									 //using for the debugging :) creates the csv file contains all the key value pairs in the database
 }
@@ -38,10 +38,10 @@ func Create_Database(path string)(*golevelDatabase) {
 //Get the value from the database
 //Parameters:
 //	-key(string) 
-func (b *golevelDatabase) Get(key string) (TransactionData , error) {
+func (b *golevelDatabase) Get(key string) (LocalTransactionData , error) {
 	fetched_byte_stream , err:= b.db.Get([]byte(key) , nil)
 
-	var tnxData TransactionData
+	var tnxData LocalTransactionData
 	err = json.Unmarshal(fetched_byte_stream , &tnxData)
 	return tnxData, err
 }
@@ -51,7 +51,7 @@ func (b *golevelDatabase) Get(key string) (TransactionData , error) {
 // Parameters
 // 	-key(string) with which key we want to insert into the database
 // 	-value(leveldbVal (struct)) with which value we want to insert into the database
-func (b *golevelDatabase) Set(key string , value TransactionData)error{
+func (b *golevelDatabase) Set(key string , value LocalTransactionData)error{
 
 	jsonStr , err := json.Marshal(value)
 	if err != nil {

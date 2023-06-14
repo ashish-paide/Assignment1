@@ -10,12 +10,12 @@ import (
 func insertHandler(c *gin.Context) {
 
 	// Decode the JSON payload from the request body
-	var payload []map[string]TransactionData
+	var payload []map[string]LocalTransactionData
 	if err := c.ShouldBindJSON(&payload); err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		return
 	}
-	db.updateLocalDb(payload)
+	db.insertTrnx(payload)
 
 	// Send a success response
 	c.JSON(http.StatusOK, gin.H{"status": "inserted successfully", "message": "Data inserted successfully"})
