@@ -37,7 +37,7 @@ func getBlocksHandler(c *gin.Context){
 		c.String(http.StatusInternalServerError, "Error parsing JSON data")
 		return
 	}
-	c.JSON(http.StatusOK, gin.H{"status": "fetched successfully", "message": data})
+	c.JSON(http.StatusOK, gin.H{"status": "fetched successfully", "message": jsonData})
 }
 
 func getBlockByIdHandler(c *gin.Context){

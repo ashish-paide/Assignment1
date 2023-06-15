@@ -22,14 +22,17 @@ func getAllBlocks() (string){
 	scanner := bufio.NewScanner(file)
 
 	// Read line by line
-	line += scanner.Text()
+	if(scanner.Scan()){
+		line += scanner.Text()
+	}
+
 	for scanner.Scan() {
 		line += ","
 		line +=  scanner.Text()
 		
 	}
 	line += "]"
-	fmt.Println(line)
+	//fmt.Println(line)
 
 	// Check for any errors during scanning
 	if err := scanner.Err(); err != nil {
