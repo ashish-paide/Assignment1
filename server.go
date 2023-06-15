@@ -21,6 +21,8 @@ func main() {
 	// POST /create/{key}
 	go router.POST("/insert", insertHandler)
 	go router.GET("/admin/reset" , resetDBHandler)
+	go router.GET("/admin/getBlocks" , getBlocksHandler)
+	go router.GET("/admin/getBlock/:id" , getBlockByIdHandler)
 	go router.GET("/admin/printlocaldb" , localdbPrintHandler)
 	log.Println("Server listening on port 18085...")
 	router.Run(":18085")

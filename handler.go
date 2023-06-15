@@ -3,6 +3,9 @@ package main
 import (
 	"github.com/gin-gonic/gin"
 	"net/http"
+	"strconv"
+	"fmt"
+	"encoding/json"
 	//"log"
 )
 
@@ -23,6 +26,33 @@ func insertHandler(c *gin.Context) {
 
 	// Send a success response
 	c.JSON(http.StatusOK, gin.H{"status": "inserted successfully", "message": "Data inserted successfully"})
+}
+
+func getBlocksHandler(c *gin.Context){
+
+	data := getAllBlocks()
+	var jsonData interface{}
+	err := json.Unmarshal([]byte(data), &jsonData)
+	if err != nil {
+		c.String(http.StatusInternalServerError, "Error parsing JSON data")
+		return
+	}
+	c.JSON(http.StatusOK, gin.H{"status": "fetched successfully", "message": data})
+}
+
+func getBlockByIdHandler(c *gin.Context){
+	id_str := c.Param("id")
+	fmt.Println(id_str)
+	id , _ := strconv.Atoi(id_str)
+	data := getBlockById(id)
+
+	var jsonData interface{}
+	err := json.Unmarshal([]byte(data), &jsonData)
+		if err != nil {
+			c.String(http.StatusInternalServerError, "Error parsing JSON data")
+			return
+		}
+	c.JSON(http.StatusOK, jsonData)
 }
 
 func resetDBHandler(c *gin.Context){
