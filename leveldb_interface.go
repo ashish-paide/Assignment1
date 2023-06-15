@@ -2,6 +2,7 @@ package main
 
 import(
 	"github.com/syndtr/goleveldb/leveldb"
+	"github.com/fatih/color"
 	"encoding/json"
 	"encoding/csv"
 	"os"
@@ -31,7 +32,9 @@ func Create_Database(path string)(*golevelDatabase) {
 	if err != nil{
 		fmt.Println("Error in Creating Database ** err --> Create_Database")
 	}
+	color.Green("database created")
 	return &golevelDatabase{db:db}
+
 }
 
 

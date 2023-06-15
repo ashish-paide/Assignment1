@@ -6,6 +6,10 @@ import (
 	//"log"
 )
 
+type Payload struct {
+	SIM map[string]LocalTransactionData `json:"SIM"`
+}
+
 // Handler for the POST Transactions endpoint /create
 func insertHandler(c *gin.Context) {
 
@@ -25,4 +29,10 @@ func resetDBHandler(c *gin.Context){
 	db.createKeys()
 	c.JSON(http.StatusOK, gin.H{"status": "NewBie", "message": "reset is done"})
 }
+
+func localdbPrintHandler(c *gin.Context){
+	db.GetallInCsv()
+	c.JSON(http.StatusOK, gin.H{"status": "Printed", "message": "check Output.Csv file"})
+}
+
 

@@ -5,26 +5,19 @@ import (
 	"fmt"
 	"log"
 	"strconv"
+	"github.com/fatih/color"
 	//"sync"
 )
 
 //defining the structure of the data in leveldb
-type Payload struct {
-	SIM map[string]LocalTransactionData `json:"SIM"`
-}
+
 
 type LedgerPair struct {
 	Key string
 	Trnx LedgerTransactionData 
 }
 
-type LedgerTransactionData struct {
-	ID int 			`json:"Id"`
-	Value int     	`json:"val"`
-	Version float64 `json:"ver"`
-	Hash string 	`json:"hash"`
-	Valid bool 		`json:"valid"`
-}
+
 
 type LocalTransactionData struct {
 	Value int `json:"val"`
@@ -45,9 +38,10 @@ func (b *golevelDatabase)createKeys(){
 }
 
 func (b *golevelDatabase)insertTrnx(payload []map[string]LocalTransactionData)(){
+	color.Yellow("about to insert transactions congurrently")
 	for _, entry := range payload {
 		for key, value := range entry {
-			go blockCtrl.updateLocalDB(key , value)
+			go b.updateLocalDB(key , value)
 		
 		}
 	}
@@ -58,16 +52,18 @@ func calculateHash(data string) string {
 	return fmt.Sprintf("%x", hash)
 }
 
-func (ctrl TrnxController)updateLocalDB(key string , trnx LocalTransactionData){
+func (b *golevelDatabase)updateLocalDB(key string , trnx LocalTransactionData){
 
 	
 	var ledTrnx LedgerTransactionData
 	ledTrnx.Value , ledTrnx.Version = trnx.Value , trnx.Version
-	oldTrnx, _ := db.Get(key)
+	oldTrnx, _ := b.Get(key)
+	color.Yellow(key , "took from the db")
+	
 	fmt.Println("updating local database " , key , trnx.Value  , trnx.Version ,"old version" ,  oldTrnx.Version )
 	if(oldTrnx.Version ==  trnx.Version){
 		trnx.Version += 1
-		db.Set(key , trnx)
+		b.Set(key , trnx)
 
 		ledTrnx.Valid = true	
 	} else{
@@ -76,9 +72,17 @@ func (ctrl TrnxController)updateLocalDB(key string , trnx LocalTransactionData){
 	str := key + strconv.Itoa(trnx.Value) + strconv.FormatFloat(trnx.Version, 'E', -1, 32) 
 	ledTrnx.Hash = calculateHash(str)
 
-	ctrl.TrnxPair <- LedgerPair{Key : key , Trnx : ledTrnx}
-	fmt.Println("sent Transaction")
-	//b.GetallInCsv()
+	ledPair  := LedgerPair{
+		Key : key,
+		Trnx: ledTrnx,
+	}
+	//fmt.Println(len(blockCtrl.TrnxPair) , ctrl.MaxTrnx)
+	select {
+	case blockCtrl.TrnxPair <- ledPair:
+		color.Yellow(key , "transaction sent to ledger channel successfully /n" )
+	default:
+		color.Red(key , "waiting ledger transaction channel  is full /n")
+	}
 
 }
 
