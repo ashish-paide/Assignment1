@@ -12,8 +12,9 @@ var blockCtrl TrnxController
 func main() {
 	blockCtrl.initialize()
 	fmt.Println(blockCtrl)
-	blockCtrl.BlockInsertService()
+	blockCtrl.trnxInsertService()
 	blockCtrl.writeFile()
+	blockCtrl.autoWrite()
 	fmt.Println(blockCtrl)
 	
 	// Create a new Gin router

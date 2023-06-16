@@ -58,9 +58,9 @@ func (b *golevelDatabase)updateLocalDB(key string , trnx LocalTransactionData){
 	var ledTrnx LedgerTransactionData
 	ledTrnx.Value , ledTrnx.Version = trnx.Value , trnx.Version
 	oldTrnx, _ := b.Get(key)
-	color.Yellow(key , "took from the db")
+	color.Green(key +  " took from the db")
 	
-	fmt.Println("updating local database " , key , trnx.Value  , trnx.Version ,"old version" ,  oldTrnx.Version )
+	//fmt.Println("updating local database " , key , trnx.Value  , trnx.Version ,"old version" ,  oldTrnx.Version )
 	if(oldTrnx.Version ==  trnx.Version){
 		trnx.Version += 1
 		b.Set(key , trnx)
@@ -79,9 +79,9 @@ func (b *golevelDatabase)updateLocalDB(key string , trnx LocalTransactionData){
 	//fmt.Println(len(blockCtrl.TrnxPair) , ctrl.MaxTrnx)
 	select {
 	case blockCtrl.TrnxPair <- ledPair:
-		color.Yellow(key , "transaction sent to ledger channel successfully /n" )
+		color.Green(key + "transaction sent to ledger channel successfully /n" )
 	default:
-		color.Red(key , "waiting ledger transaction channel  is full /n")
+		color.Red(key + "waiting ledger transaction channel  is full /n")
 	}
 
 }

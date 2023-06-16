@@ -1,3 +1,6 @@
+//this go file is to fetch the data from the ledger.txt file 
+
+
 package main
 
 import (
@@ -7,6 +10,8 @@ import (
 	"fmt"
 )
 
+//	Made this function take all the blocks in the ledger.txt file and 
+//make it as a json marshalled string and returns the string
 func getAllBlocks() (string){
 	filePath := "ledger.txt"
 	
@@ -15,6 +20,7 @@ func getAllBlocks() (string){
 	if err != nil {
 		log.Fatal(err)
 	}
+//string initialisation
 	line := "["
 	defer file.Close()
 
@@ -42,6 +48,10 @@ func getAllBlocks() (string){
 	return line
 }
 
+
+//function to frtch the block with the block id
+//parameters
+// -id(int) id for fetching the particular block
 func getBlockById(id int)(string){
 	filePath := "ledger.txt"
 	
@@ -56,7 +66,7 @@ func getBlockById(id int)(string){
 	// Create a scanner to read line by line
 	scanner := bufio.NewScanner(file)
 
-	// Read line by line
+	// Read line by line ignores all other lines
 	for scanner.Scan() {
 		id -= 1
 		fmt.Println(id)

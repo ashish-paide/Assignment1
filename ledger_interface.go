@@ -13,11 +13,12 @@ type TrnxController struct{
 	BlockNo int
 	PrevBlockHash string
 	TrnxNo int
-	TrnxPair chan LedgerPair
+	WaitTime int
 	MaxTrnx int
 	//Block Block
 	Blockchan chan Block
 	PrintBlockChan chan Block
+	TrnxPair chan LedgerPair
 }
 
 type LedgerTransactionData struct {
@@ -40,6 +41,7 @@ func (ctrl TrnxController)initialize(){
 	blockCtrl.PrevBlockHash = ""
 	blockCtrl.TrnxNo = 1
 	blockCtrl.MaxTrnx = 5
+	blockCtrl.WaitTime = 5
 	blockCtrl.Blockchan = make(chan Block , 1)
 	blockCtrl.TrnxPair = make(chan LedgerPair ,5)
 	blockCtrl.PrintBlockChan = make(chan Block , 1)
@@ -61,49 +63,54 @@ func (ctrl TrnxController)initialize(){
 	
 }
 
-func (ctrl TrnxController)BlockInsertService() {
+func (ctrl TrnxController)trnxInsertService() {
 
 	color.Yellow("Insert Service is running")
 	go func(){
 		for {
 
 			//if len(ctrl.Blockchan == 0)
-			block := <- ctrl.Blockchan
+			
 			color.Green("took the block")
-			trnxPair := <-ctrl.TrnxPair
+			trnxPair := <-blockCtrl.TrnxPair
+			block := <- blockCtrl.Blockchan
 
 
-			if(len(block.Transactions) == ctrl.MaxTrnx){ 
-				blockByteStream , err := json.Marshal(block)
-				if err != nil {
-					log.Fatal(err , "error while marshalling block")
-				}
-	
-				ctrl.PrevBlockHash = calculateHash(string(blockByteStream))
-				color.Red(ctrl.PrevBlockHash)
-				block.TimeStamp = time.Now()
-	
-				ctrl.PrintBlockChan <- block
-	
-	
-				ctrl.BlockNo ++ 
-				block.BlockNo = ctrl.BlockNo
-				block.PrevBlockHash = ctrl.PrevBlockHash
-				block.Transactions = make([]map[string]LedgerTransactionData, 0)
-				block.TimeStamp = time.Now()		
+			if(len(block.Transactions) == blockCtrl.MaxTrnx){ 
+				blockCtrl.pushBlock(block)		
 			}
 	
-			if(len(block.Transactions) <= ctrl.MaxTrnx){ 
-				trnxPair.Trnx.ID = ctrl.TrnxNo
-				ctrl.TrnxNo += 1
+			if(len(block.Transactions) <= blockCtrl.MaxTrnx){ 
+				trnxPair.Trnx.ID = blockCtrl.TrnxNo
+				blockCtrl.TrnxNo += 1
 				block.Transactions = append(block.Transactions , map[string]LedgerTransactionData {trnxPair.Key: trnxPair.Trnx})
 			}
 	
-			ctrl.Blockchan <- block
+			blockCtrl.Blockchan <- block
 		}
 	}()
 }
 
+func (ctrl TrnxController)pushBlock(block Block)(Block){
+
+	blockByteStream , err := json.Marshal(block)
+	if err != nil {
+		log.Fatal(err , "error while marshalling block")
+	}
+	
+	blockCtrl.PrevBlockHash = calculateHash(string(blockByteStream))
+	color.Red(ctrl.PrevBlockHash)
+	block.TimeStamp = time.Now()
+	
+	blockCtrl.PrintBlockChan <- block
+		
+	blockCtrl.BlockNo ++ 
+	block.BlockNo = blockCtrl.BlockNo
+	block.PrevBlockHash = blockCtrl.PrevBlockHash
+	block.Transactions = make([]map[string]LedgerTransactionData, 0)
+	block.TimeStamp = time.Now()
+	return block
+}
 
 func (ctrl TrnxController)writeFile(){
 
@@ -126,6 +133,28 @@ func (ctrl TrnxController)writeFile(){
 	
 			if _, err = f.WriteString(string(byteStream) + "\n"); err != nil {
 				panic(err)	
+			}
+		}
+	}()
+}
+
+func (ctrl TrnxController)autoWrite(){
+	color.Yellow("auto block writer is initialised")
+	go func(){
+		for{
+			time.Sleep(time.Second * time.Duration(blockCtrl.WaitTime))
+			color.Red("timestamp")
+			if(len(blockCtrl.Blockchan) !=0 ){
+				block := <- blockCtrl.Blockchan
+				if(len(block.Transactions)!= 0){
+					block = blockCtrl.pushBlock(block)
+				} else {
+					color.Red("block is empty")
+				}
+
+				blockCtrl.Blockchan <- block
+			} else {
+				color.Red("channel is empty")
 			}
 		}
 	}()
