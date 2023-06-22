@@ -10,15 +10,14 @@ import (
 )
 
 type TrnxController struct{
-	BlockNo int
-	PrevBlockHash string
-	TrnxNo int
-	WaitTime int
-	MaxTrnx int
-	//Block Block
-	Blockchan chan Block
-	PrintBlockChan chan Block
-	TrnxPair chan LedgerPair
+	BlockNo int					//block number
+	PrevBlockHash string		//hash of the previous block
+	TrnxNo int					//cache of the trnx number
+	WaitTime time.Duration		//time to wait for the auto write
+	MaxTrnx int					//max trnx in one block
+	Blockchan chan Block		//channel for insertion of the trnx into the block 
+	PrintBlockChan chan Block	//channel for the printing of the block in file
+	TrnxPair chan LedgerPair	//channel for the passing of the key value pair if the transaction
 }
 
 //struct for Transaction data format in ledger
@@ -45,7 +44,7 @@ func (ctrl TrnxController)initialize(){
 	blockCtrl.PrevBlockHash = ""
 	blockCtrl.TrnxNo = 1
 	blockCtrl.MaxTrnx = 5
-	blockCtrl.WaitTime = 5
+	blockCtrl.WaitTime = 5 * time.Second
 	blockCtrl.Blockchan = make(chan Block , 1)
 	blockCtrl.TrnxPair = make(chan LedgerPair ,5)
 	blockCtrl.PrintBlockChan = make(chan Block , 1)
@@ -74,30 +73,54 @@ func (ctrl TrnxController)trnxInsertService() {
 	go func(){
 		for {
 			
-			//waits for the transaction
-			trnxPair := <-blockCtrl.TrnxPair
-			//waits for the block
-			block := <- blockCtrl.Blockchan
+			select{
+			//waits for the transaction pair to get
+			case trnxPair := <-blockCtrl.TrnxPair:
+				//wait for the block to come
+				block := <- blockCtrl.Blockchan
 
-			//check whether the block is full
-			if(len(block.Transactions) == blockCtrl.MaxTrnx){ 
-				block = blockCtrl.pushBlock(block)	
-			}
-	
-			//inserting the transation into the block
-			if(len(block.Transactions) <= blockCtrl.MaxTrnx){ 
-				trnxPair.Trnx.ID = blockCtrl.TrnxNo
-				blockCtrl.TrnxNo += 1
-				if(len(block.Transactions) == 0){
-					block.TimeStamp = time.Now()
+				//check whether the block is full
+				if(len(block.Transactions) == blockCtrl.MaxTrnx){ 
+					block = blockCtrl.pushBlock(block)	
 				}
+	
+				//inserting the transation into the block
+				if(len(block.Transactions) <= blockCtrl.MaxTrnx){ 
+					trnxPair.Trnx.ID = blockCtrl.TrnxNo	//assgning the transaction number
+					blockCtrl.TrnxNo += 1				//incrementing the transaction number for the next transaction
+					if(len(block.Transactions) == 0){	//alloting the block creating time at the time of the first insertion
+						block.TimeStamp = time.Now()
+					}
+					//transaction insertion
+					block.Transactions = append(block.Transactions , map[string]LedgerTransactionData {trnxPair.Key: trnxPair.Trnx})
+				}
+				//push back the block to the channel
+				blockCtrl.Blockchan <- block
+			//if in case the transaction is not found in the given time limit
+			case <-time.After(blockCtrl.WaitTime):
+				blockCtrl.autoWrite()
 
-				block.Transactions = append(block.Transactions , map[string]LedgerTransactionData {trnxPair.Key: trnxPair.Trnx})
 			}
-			//push back the block to the channel
-			blockCtrl.Blockchan <- block
+			
 		}
 	}()
+}
+
+//	go routine to write the block to the ledger 
+//automatically if it crosses the given timeout
+func (ctrl TrnxController)autoWrite(){
+	//color.Red("timestamp")
+	if(len(blockCtrl.Blockchan) !=0 ){
+		block := <- blockCtrl.Blockchan
+		if(len(block.Transactions)!= 0){
+			block = blockCtrl.pushBlock(block)
+		} else {
+				//color.Red("block is empty")
+		}
+		blockCtrl.Blockchan <- block
+	} else {
+		//color.Red("channel is empty")
+	}		
 }
 
 //function to preprocess the the block before pushing to the ledger amd clean the block
@@ -153,29 +176,7 @@ func (ctrl TrnxController)writeFile(){
 }
 
 
-//	go routine to write the block to the ledger 
-//automatically if it crosses the given timeout
-func (ctrl TrnxController)autoWrite(){
-	color.Yellow("auto block writer is initialised")
-	go func(){
-		for{
-			time.Sleep(time.Second * time.Duration(blockCtrl.WaitTime))
-			//color.Red("timestamp")
-			if(len(blockCtrl.Blockchan) !=0 ){
-				block := <- blockCtrl.Blockchan
-				if(len(block.Transactions)!= 0){
-					block = blockCtrl.pushBlock(block)
-				} else {
-					//color.Red("block is empty")
-				}
 
-				blockCtrl.Blockchan <- block
-			} else {
-				//color.Red("channel is empty")
-			}
-		}
-	}()
-}
 
 
 
