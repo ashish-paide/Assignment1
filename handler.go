@@ -4,9 +4,7 @@ import (
 	"github.com/gin-gonic/gin"
 	"net/http"
 	"strconv"
-	"fmt"
 	"encoding/json"
-	//"log"
 )
 
 type Payload struct {
@@ -42,7 +40,7 @@ func getBlocksHandler(c *gin.Context){
 
 func getBlockByIdHandler(c *gin.Context){
 	id_str := c.Param("id")
-	fmt.Println(id_str)
+	//fmt.Println(id_str)
 	id , _ := strconv.Atoi(id_str)
 	data := getBlockById(id)
 

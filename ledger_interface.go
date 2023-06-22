@@ -21,6 +21,7 @@ type TrnxController struct{
 	TrnxPair chan LedgerPair
 }
 
+//struct for Transaction data format in ledger
 type LedgerTransactionData struct {
 	ID int 			`json:"Id"`
 	Value int     	`json:"val"`
@@ -29,13 +30,16 @@ type LedgerTransactionData struct {
 	Valid bool 		`json:"valid"`
 }
 
+//Block format
 type Block struct{
 	BlockNo int `json:"blockNumber"`
 	PrevBlockHash string `json:"prevBlockHash"`
 	Transactions []map[string]LedgerTransactionData `json:"txns"`
-	TimeStamp time.Time `json:"timeStamp"`
+	TimeStamp time.Time `json:"blockCreated"`
 }
 
+
+//function that initializes the block controller(default values)
 func (ctrl TrnxController)initialize(){
 	blockCtrl.BlockNo = 1
 	blockCtrl.PrevBlockHash = ""
@@ -63,35 +67,44 @@ func (ctrl TrnxController)initialize(){
 	
 }
 
+//function that insert the trnx into the block when it comes to the channel
 func (ctrl TrnxController)trnxInsertService() {
 
 	color.Yellow("Insert Service is running")
 	go func(){
 		for {
-
-			//if len(ctrl.Blockchan == 0)
 			
-			color.Green("took the block")
+			//waits for the transaction
 			trnxPair := <-blockCtrl.TrnxPair
+			//waits for the block
 			block := <- blockCtrl.Blockchan
 
-
+			//check whether the block is full
 			if(len(block.Transactions) == blockCtrl.MaxTrnx){ 
-				blockCtrl.pushBlock(block)		
+				block = blockCtrl.pushBlock(block)	
 			}
 	
+			//inserting the transation into the block
 			if(len(block.Transactions) <= blockCtrl.MaxTrnx){ 
 				trnxPair.Trnx.ID = blockCtrl.TrnxNo
 				blockCtrl.TrnxNo += 1
+				if(len(block.Transactions) == 0){
+					block.TimeStamp = time.Now()
+				}
+
 				block.Transactions = append(block.Transactions , map[string]LedgerTransactionData {trnxPair.Key: trnxPair.Trnx})
 			}
-	
+			//push back the block to the channel
 			blockCtrl.Blockchan <- block
 		}
 	}()
 }
 
+//function to preprocess the the block before pushing to the ledger amd clean the block
 func (ctrl TrnxController)pushBlock(block Block)(Block){
+//printing the timelapse for filling the block
+	fmt.Println("timelapse for the block " ,blockCtrl.BlockNo , "is " ,  time.Since(block.TimeStamp))
+
 
 	blockByteStream , err := json.Marshal(block)
 	if err != nil {
@@ -99,19 +112,20 @@ func (ctrl TrnxController)pushBlock(block Block)(Block){
 	}
 	
 	blockCtrl.PrevBlockHash = calculateHash(string(blockByteStream))
-	color.Red(ctrl.PrevBlockHash)
-	block.TimeStamp = time.Now()
+	//color.Red(ctrl.PrevBlockHash)
+	//block.TimeStamp = time.Now()
 	
 	blockCtrl.PrintBlockChan <- block
-		
+    
 	blockCtrl.BlockNo ++ 
 	block.BlockNo = blockCtrl.BlockNo
 	block.PrevBlockHash = blockCtrl.PrevBlockHash
 	block.Transactions = make([]map[string]LedgerTransactionData, 0)
-	block.TimeStamp = time.Now()
+	//block.TimeStamp = time.Now()
 	return block
 }
 
+//go routine to write block into the ledger
 func (ctrl TrnxController)writeFile(){
 
 	color.Yellow("write file service is running")
@@ -138,23 +152,26 @@ func (ctrl TrnxController)writeFile(){
 	}()
 }
 
+
+//	go routine to write the block to the ledger 
+//automatically if it crosses the given timeout
 func (ctrl TrnxController)autoWrite(){
 	color.Yellow("auto block writer is initialised")
 	go func(){
 		for{
 			time.Sleep(time.Second * time.Duration(blockCtrl.WaitTime))
-			color.Red("timestamp")
+			//color.Red("timestamp")
 			if(len(blockCtrl.Blockchan) !=0 ){
 				block := <- blockCtrl.Blockchan
 				if(len(block.Transactions)!= 0){
 					block = blockCtrl.pushBlock(block)
 				} else {
-					color.Red("block is empty")
+					//color.Red("block is empty")
 				}
 
 				blockCtrl.Blockchan <- block
 			} else {
-				color.Red("channel is empty")
+				//color.Red("channel is empty")
 			}
 		}
 	}()

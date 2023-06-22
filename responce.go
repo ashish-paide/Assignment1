@@ -7,7 +7,7 @@ import (
 	"log"
 	"bufio"
 	"os"
-	"fmt"
+	//"fmt"
 )
 
 //	Made this function take all the blocks in the ledger.txt file and 
@@ -69,7 +69,7 @@ func getBlockById(id int)(string){
 	// Read line by line ignores all other lines
 	for scanner.Scan() {
 		id -= 1
-		fmt.Println(id)
+		//fmt.Println(id)
 		line := scanner.Text()
 		if id == 0{
 			return line
