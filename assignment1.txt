@@ -1,0 +1,80 @@
+Declare structs which has block number, list containing txn IDs and validity of txns , 
+timestamp, block status to accept enum of following values - committed, pending,
+previous block hash. Feel free to compose from different structs if required.
+
+write interface for block struct which implements following methods:
+- push valid txns to the block	 - while pushing the txn, validate versions of keys
+- update block status to committed
+
+Input txns will be given as an array of json objects. 
+
+Set up a local instance of LevelDB containing 1000 entries with keys starting from SIM1 .... SIM1000, 
+each having value of their respective index and version to be 1
+
+At the time of processing new txns, mark only those txns as valid where version matches. Both valid and invalid txns will be included in the block, but only valid txns will be committed to Level DB
+
+Example:
+
+Level DB entries (Initial State)
+SIM1 - {"val": 1, "ver": 1.0}
+SIM2 - {"val": 2, "ver": 1.0}
+SIM3 - {"val": 3, "ver": 1.0}
+
+Input Txn List
+[
+	{"SIM1" : {"val": 2, "ver": 1.0}},
+	{"SIM2" : {"val": 3, "ver": 1.0}},
+	{"SIM3" : {"val": 4, "ver": 2.0}},
+]
+
+Level DB entries (After State)
+SIM1 - {"val": 2, "ver": 2.0}
+SIM2 - {"val": 3, "ver": 2.0}
+SIM3 - {"val": 3, "ver": 1.0}
+
+File (ledger) contents:
+{{"blockNumber" : 1 , "prevBlockHash": "0xabc123", "txns" : [{"SIM1" : {"val": 2, "ver": 2.0, "valid": true}},{"SIM2" : {"val": 3, "ver": 2.0, "valid": true}},{"SIM3" : {"val": 4, "ver": 1.0, "valid": false}}]}}
+
+Deliverables:
+
+Task - 1 
+You are required to calculate hash of all txns concurrently and update txn ID and valid status of each txn in block 
+after getting results from all go routines. Once block is ready to commit, send it to below channel. Number of txns that can be included in a block 
+should be configurable.
+
+Task - 2
+Declare a channel which will receive blocks to be written to a file
+
+Task - 3
+On receiving the block in the channel, append the block in a file
+
+Task - 4 
+Create method to fetch block details by block number by reading from file
+
+Task - 5
+Create method to fetch details of all blocks by reading from file
+
+Task - 6
+Display block processing time for each block
+
+
+Points to remember:
+- create a public repo on your personal Github for this assignment. Do not mention NPCI anywhere
+- Commit your work everyday on Github
+- There should be a main branch and task wise feature branch
+- Feature branch should be merged in the main branch only via pull request	 (PR)
+- Make your code modular and easy to read
+
+System Requirements:
+- Linux based distribution (e.g. Ubuntu)
+- Git
+- Latest version of Go / Rust
+
+Bonus:
+- Extra credit for adding unit test cases
+
+References:
+- https://gith  ub.com/syndtr/goleveldb
+- 
+
+
